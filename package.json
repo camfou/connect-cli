@@ -30,6 +30,7 @@
     "chalk": "^1.0.0",
     "cli-table": "^0.3.1",
     "fs-extra": "^0.24.0",
+    "https-proxy-agent": "^1.0.0",
     "inquirer": "^0.10.0",
     "js-yaml": "^3.4.2",
     "lodash": "^3.10.1",
