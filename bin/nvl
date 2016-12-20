@@ -6,26 +6,60 @@ var cli = require('../index.js');
 var pkg = require('../package.json');
 var updateNotifier = require('update-notifier');
 
+var http = require('http');
+var https = require('https');
+var HttpsProxyAgent = require('https-proxy-agent');
+
 // Initialize the CLI
 cli.initialize(function (err) {
-  if (err) {
-    console.log('Error initializing CLI')
-    console.log(err)
-    process.exit(1)
-  }
+    if (err) {
+        console.log('Error initializing CLI')
+        console.log(err)
+        process.exit(1)
+    }
 
-  // Check for update
-  var notifier = updateNotifier({
-    packageName:         pkg.name,
-    packageVersion:      pkg.version,
-    updateCheckInterval: 1000 * 60 * 60 * 24 * 7
-  });
+    // Check for update
+    var notifier = updateNotifier({
+        packageName: pkg.name,
+        packageVersion: pkg.version,
+        updateCheckInterval: 1000 * 60 * 60 * 24 * 7
+    });
 
-  // Notify if update available
-  if (notifier.update) {
-    notifier.notify();
-  }
+    // Notify if update available
+    if (notifier.update) {
+        notifier.notify();
+    }
 
-  // Run the command
-  cli.run(process.argv);
+    // Run the command
+    cli.run(process.argv);
 })
+
+function overrideMethod(module, functionName, newFunction) {
+    module[functionName] = newFunction.bind(undefined, module[functionName]);
+}
+
+var httpProxy = process.env.http_proxy;
+if (httpProxy) {
+    console.log("Using HTTP proxy: " + httpProxy);
+
+    var httpProxyingAgent = new HttpsProxyAgent(httpProxy);
+
+    overrideMethod(http, "request", function (originalRequest, options, callback) {
+        options.agent = httpProxyingAgent;
+        return originalRequest(options, callback);
+    });
+}
+
+var httpsProxy = process.env.https_proxy;
+
+if (httpsProxy) {
+
+    console.log("Using HTTPS proxy: " + httpsProxy);
+
+    var httpsProxyingAgent = new HttpsProxyAgent(httpsProxy);
+
+    overrideMethod(https, "request", function (originalRequest, options, callback) {
+        options.agent = httpsProxyingAgent;
+        return originalRequest(options, callback);
+    });
+}
